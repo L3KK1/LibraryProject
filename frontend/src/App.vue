@@ -39,6 +39,7 @@
 
 <script setup>
 import { ref, onMounted  } from 'vue'
+import axios from 'axios';
 import TableItem from './components/TableItem.vue';
 
 // Реактивные переменные
@@ -81,14 +82,9 @@ const fetchBooks = async () => {
   error.value = null
   
   try {
-    const response = await fetch('http://localhost:3001/api/books')
+    const response = await axios.get('http://localhost:3001/api/books')
     
-    // Проверяем, успешен ли ответ
-    if (!response.ok) {
-      throw new Error(`Ошибка сервера: ${response.status}`)
-    }
-    
-    const result = await response.json()
+    const result = response.data
     
     // Проверяем структуру ответа
     if (result.success) {

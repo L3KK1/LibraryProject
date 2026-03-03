@@ -1,26 +1,37 @@
-//Создаёт "pool" подключений к SQL Server. Подключается один раз при старте и держит соединение открытым для всех запросов.
-
 const sql = require("mssql/msnodesqlv8");
 
 const config = {
-  server: "AP-SBU08-\\SQLEXPRESS", // твой SQL Server instance ИЗМЕНИТЬ!!!!!!!!!!
-  database: "LibraryDB", // имя бд
+  server: "LEKKI",           
+  port: 1433,                   
+  database: "LibrayDB",        
   options: {
-    trustedConnection: true,
+    trustedConnection: true,    
     trustServerCertificate: true,
   },
-  driver: "msnodesqlv8",
+  driver: "ODBC Driver 17 for SQL Server",
 };
 
 const poolPromise = new sql.ConnectionPool(config)
   .connect()
   .then((pool) => {
-    console.log("✅ Подключение успешно!");
+    console.log("✅ Подключение к SQL Server успешно!");
     return pool;
   })
   .catch((err) => {
-    console.error("❌ Ошибка:", err.message);
+    console.error("❌ Ошибка подключения:", err.message);
+    console.error("Полная ошибка:", err);
     process.exit(1);
   });
 
-module.exports = { sql, poolPromise };
+async function query(sqlQuery, params = {}) {
+  const pool = await poolPromise;
+  const request = pool.request();
+  
+  Object.keys(params).forEach(key => {
+    request.input(key, params[key]);
+  });
+  
+  return request.query(sqlQuery);
+}
+
+module.exports = { sql, poolPromise, query };
