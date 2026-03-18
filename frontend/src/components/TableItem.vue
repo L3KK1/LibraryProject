@@ -7,8 +7,9 @@
     <td>{{ genreName }}</td>
     <td>{{ book.page_count }}</td>
     <td class="description">{{ book.description }}</td>
-    <td class="actions">
-      <button class="btn-edit" @click="$emit('edit', book)">✏️</button>
+    <td class="edit">
+      <button class="btn-edit" @click="$emit('edit', book)">✏️</button></td>
+    <td class="delete">
       <button class="btn-delete" @click="$emit('delete', book.book_id)">🗑️</button>
     </td>
   </tr>

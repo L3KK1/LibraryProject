@@ -19,6 +19,7 @@ app.use((req, res, next) => {
 
 // Маршруты
 app.use("/api/books", require("./routes/books"));
+app.use("/api/genres", require("./routes/genres"));
 
 // Тестовый endpoint
 app.get("/api/test", (req, res) => {
