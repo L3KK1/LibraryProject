@@ -288,18 +288,25 @@ onMounted(() => {
   border-collapse: collapse;
   background: white;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  text-align: center;
 }
 
 .books-table th {
   background: #2d3748;
   color: white;
   padding: 12px;
-  text-align: left;
+  text-align: center;
 }
 
 .books-table td {
   padding: 12px;
   border-bottom: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.books-table tr {
+  min-height: 48px;     
+  height: 48px;
 }
 
 tr:hover {
