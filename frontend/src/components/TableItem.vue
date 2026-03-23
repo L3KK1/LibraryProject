@@ -1,16 +1,63 @@
+<!-- src/components/TableItem.vue -->
 <template>
-  <tr>
-    <td>{{ book.book_id }}</td>
-    <td>{{ book.title }}</td>
-    <td>{{ book.publication_year }}</td>
-    <td>{{ book.publisher }}</td>
-    <td>{{ genreName }}</td>
-    <td>{{ book.page_count }}</td>
-    <td class="description">{{ book.description }}</td>
-    <td class="edit">
-      <button class="btn-edit" @click="$emit('edit', book)">✏️</button></td>
-    <td class="delete">
-      <button class="btn-delete" @click="$emit('delete', book.book_id)">🗑️</button>
+  <tr class="group hover:bg-zinc-800/70 transition-colors duration-200">
+    <!-- ID -->
+    <td class="px-6 py-5 text-center font-mono text-zinc-400 text-sm">
+      {{ book.book_id }}
+    </td>
+
+    <!-- Название -->
+    <td class="px-6 py-5 font-medium text-white">
+      {{ book.title }}
+    </td>
+
+    <!-- Год -->
+    <td class="px-6 py-5 text-center text-zinc-300">
+      {{ book.publication_year || '—' }}
+    </td>
+
+    <!-- Издательство -->
+    <td class="px-6 py-5 text-zinc-300">
+      {{ book.publisher || '—' }}
+    </td>
+
+    <!-- Жанр -->
+    <td class="px-6 py-5 text-center">
+      <span class="inline-block px-4 py-1 bg-zinc-800 text-zinc-300 text-sm rounded-full">
+        {{ genreName }}
+      </span>
+    </td>
+
+    <!-- Страниц -->
+    <td class="px-6 py-5 text-center font-medium text-emerald-400">
+      {{ book.page_count || '—' }}
+    </td>
+
+    <!-- Описание -->
+    <td class="px-6 py-5 text-sm text-zinc-400 max-w-xs">
+      <div class="line-clamp-2">
+        {{ book.description || 'Нет описания' }}
+      </div>
+    </td>
+
+    <!-- Действия -->
+    <td class="px-6 py-5">
+      <div class="flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-200">
+        <button
+          @click.stop="$emit('edit', book)"
+          class="w-9 h-9 flex items-center justify-center text-blue-400 hover:text-blue-500 hover:bg-blue-500/10 rounded-xl transition-all"
+          title="Редактировать"
+        >
+          ✏️
+        </button>
+        <button
+          @click.stop="$emit('delete', book.book_id)"
+          class="w-9 h-9 flex items-center justify-center text-red-400 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
+          title="Удалить"
+        >
+          🗑️
+        </button>
+      </div>
     </td>
   </tr>
 </template>
@@ -19,25 +66,20 @@
 import { computed } from 'vue'
 
 const props = defineProps({
-  book: { type: Object, required: true },
-  genres: { type: Array, default: () => [] }
+  book: {
+    type: Object,
+    required: true
+  },
+  genres: {
+    type: Array,
+    default: () => []
+  }
 })
 
 const genreName = computed(() => {
-  const g = props.genres.find(gen => gen.genre_id === props.book.genre_id)
-  return g ? (g.name || g.genre_name || g.genreName || `Жанр ${props.book.genre_id}`) : '—'
+  const genre = props.genres.find(g => g.genre_id === props.book.genre_id)
+  return genre 
+    ? (genre.name || genre.genre_name || genre.GenreName || `Жанр ${props.book.genre_id}`)
+    : '—'
 })
 </script>
-
-<style scoped>
-.actions button {
-  background: none;
-  border: none;
-  font-size: 1.3rem;
-  cursor: pointer;
-  margin: 0 6px;
-}
-.btn-edit  { color: #2563eb; }
-.btn-delete { color: #dc2626; }
-.description { white-space: normal; }
-</style>

@@ -1,115 +1,80 @@
-<!-- App.vue -->
 <template>
-  <div class="library-app">
-    <div class="header">
-      <h1 class="title">Библиотека</h1>
-      <button class="btn btn-add" @click="openAddForm">+ Новая книга</button>
-    </div>
+  <div class="min-h-screen bg-zinc-950 text-zinc-200">
+    <Header
+      v-model:search-query="searchQuery"
+      v-model:selected-genre-id="selectedGenreId"
+      :genres="genres"
+      @add-book="openAddModal"
+    />
 
-    <div class="filters">
-      <select v-model="selectedGenreId" class="genre-select">
-        <option value="">Все жанры</option>
-        <option v-for="genre in genres" :key="genre.genre_id" :value="genre.genre_id">
-          {{ genre.name || genre.genre_name || `Жанр #${genre.genre_id}` }}
-        </option>
-      </select>
+    <div class="max-w-7xl mx-auto px-6 py-10">
+      <!-- Статистика -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12">
+        <div class="bg-zinc-900/70 border border-zinc-700 rounded-3xl p-6 flex items-center gap-5 hover:border-blue-500 transition-all">
+          <div class="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-4xl">📚</div>
+          <div>
+            <div class="text-5xl font-bold text-white">{{ totalBooks }}</div>
+            <div class="text-zinc-400 text-lg">Всего книг</div>
+          </div>
+        </div>
+        <div class="bg-zinc-900/70 border border-zinc-700 rounded-3xl p-6 flex items-center gap-5 hover:border-emerald-500 transition-all">
+          <div class="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-4xl">🔍</div>
+          <div>
+            <div class="text-5xl font-bold text-white">{{ books.length }}</div>
+            <div class="text-zinc-400 text-lg">Найдено сейчас</div>
+          </div>
+        </div>
+        <div class="bg-zinc-900/70 border border-zinc-700 rounded-3xl p-6 flex items-center gap-5 hover:border-amber-500 transition-all">
+          <div class="w-14 h-14 bg-amber-500/10 rounded-2xl flex items-center justify-center text-4xl">📖</div>
+          <div>
+            <div class="text-5xl font-bold text-white">{{ genres.length }}</div>
+            <div class="text-zinc-400 text-lg">Жанров</div>
+          </div>
+        </div>
+      </div>
 
-      <input
-        v-model="searchQuery"
-        type="text"
-        placeholder="Поиск книги по названию..."
-        class="search-input"
+      <BookTable
+        :books="books"
+        :genres="genres"
+        @edit="openEditModal"
+        @delete="deleteBook"
       />
     </div>
 
-    <div v-if="loading" class="loading">Загрузка...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else-if="filteredBooks.length === 0" class="empty">
-      Книги не найдены
+    <BookModal
+      :show="showModal"
+      :book="editingBook"
+      :genres="genres"
+      @close="closeModal"
+      @save="saveBook"
+    />
+
+    <div v-if="loading" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+      <div class="text-2xl text-blue-400 flex items-center gap-3">
+        <span class="animate-spin">⟳</span>
+        Загрузка книг...
+      </div>
     </div>
-    <table v-else class="books-table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Название</th>
-          <th>Год</th>
-          <th>Издательство</th>
-          <th>Жанр</th>
-          <th>Страниц</th>
-          <th>Описание</th>
-          <th>Изменить</th>
-          <th>Удалить</th>
-        </tr>
-      </thead>
-      <tbody>
-        <TableItem
-          v-for="book in filteredBooks"
-          :key="book.book_id"
-          :book="book"
-          :genres="genres"
-          @edit="openEditForm"
-          @delete="deleteBook"
-        />
-      </tbody>
-    </table>
 
-   
-    <div v-if="showForm" class="book-form">
-      <h2>{{ isEditMode ? 'Редактировать книгу' : 'Новая книга' }}</h2>
+    <div v-else-if="error" class="text-center py-20 text-red-400 text-xl">
+      {{ error }}
+    </div>
 
-      <form @submit.prevent="saveBook">
-        <div class="form-group">
-          <label>Название</label>
-          <input v-model="form.title" required />
-        </div>
-
-        <div class="form-group">
-          <label>Год издания</label>
-          <input v-model.number="form.publication_year" type="number" required />
-        </div>
-
-        <div class="form-group">
-          <label>Издательство</label>
-          <input v-model="form.publisher" />
-        </div>
-
-        <div class="form-group">
-          <label>Жанр</label>
-          <select v-model="form.genre_id" required>
-            <option v-for="g in genres" :key="g.genre_id" :value="g.genre_id">
-              {{ g.name || g.genre_name || `Жанр #${g.genre_id}` }}
-            </option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>Количество страниц</label>
-          <input v-model.number="form.page_count" type="number" min="1" />
-        </div>
-
-        <div class="form-group">
-          <label>Описание</label>
-          <textarea v-model="form.description" rows="4"></textarea>
-        </div>
-
-        <div class="form-actions">
-          <button type="submit" class="btn btn-save">
-            {{ isEditMode ? 'Сохранить изменения' : 'Добавить книгу' }}
-          </button>
-          <button type="button" class="btn btn-cancel" @click="closeForm">
-            Отмена
-          </button>
-        </div>
-      </form>
+    <div v-else-if="books.length === 0 && !loading" class="text-center py-20 text-zinc-400 text-2xl">
+      Книги не найдены по вашему запросу
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import axios from 'axios'
-import TableItem from './components/TableItem.vue'
 
+import Header from './components/Header.vue'
+import BookTable from './components/BookTable.vue'
+import BookModal from './components/BookModal.vue'
+
+// ==================== Данные ====================
 const books = ref([])
 const genres = ref([])
 const loading = ref(false)
@@ -118,255 +83,97 @@ const error = ref(null)
 const searchQuery = ref('')
 const selectedGenreId = ref('')
 
-const showForm = ref(false)
-const isEditMode = ref(false)
-const form = ref({
-  book_id: null,
-  title: '',
-  publication_year: null,
-  publisher: '',
-  genre_id: null,
-  page_count: null,
-  description: ''
-})
+const showModal = ref(false)
+const editingBook = ref(null)
 
-const filteredBooks = computed(() => {
-  let result = books.value
+const totalBooks = ref(0)
 
-  // Поиск
-  if (searchQuery.value.trim()) {
-    const q = searchQuery.value.toLowerCase().trim()
-    result = result.filter(b => b.title?.toLowerCase().includes(q))
-  }
-
-  // Фильтр
-  if (selectedGenreId.value) {
-    result = result.filter(b => b.genre_id === Number(selectedGenreId.value))
-  }
-
-  return result
-})
-
-async function fetchBooks() {
+// ==================== Загрузка книг ====================
+const fetchBooks = async () => {
   loading.value = true
+  error.value = null
+
   try {
-    const { data } = await axios.get('http://localhost:3001/api/books')
-    if (data.success) books.value = data.data || []
-    else throw new Error(data.message || 'Ошибка формата')
+    const params = {
+      search: searchQuery.value.trim(),
+      genre: selectedGenreId.value || '',
+      limit: 500,
+      offset: 0
+    }
+
+    const { data } = await axios.get('http://localhost:3001/api/books', { params })
+
+    if (data.success) {
+      books.value = data.data || []
+      totalBooks.value = data.pagination?.total || 0
+    } else {
+      throw new Error(data.message || 'Ошибка сервера')
+    }
   } catch (err) {
-    error.value = err.message || 'Не удалось загрузить книги'
+    error.value = 'Не удалось загрузить книги'
     console.error(err)
   } finally {
     loading.value = false
   }
 }
 
-async function fetchGenres() {
+// ==================== Загрузка жанров ====================
+const fetchGenres = async () => {
   try {
     const { data } = await axios.get('http://localhost:3001/api/genres')
-    if (data.success) genres.value = data.data || []
+    genres.value = data.success ? data.data || [] : []
   } catch (err) {
-    console.warn('Не удалось загрузить жанры', err)
+    console.warn('Не удалось загрузить жанры')
   }
 }
 
-function openAddForm() {
-  form.value = {
-    book_id: null,
-    title: '',
-    publication_year: null,
-    publisher: '',
-    genre_id: null,
-    page_count: null,
-    description: ''
-  }
-  isEditMode.value = false
-  showForm.value = true
+// ==================== Модальное окно ====================
+const openAddModal = () => {
+  editingBook.value = null
+  showModal.value = true
 }
 
-function openEditForm(book) {
-  form.value = { ...book }
-  isEditMode.value = true
-  showForm.value = true
+const openEditModal = (book) => {
+  editingBook.value = { ...book }
+  showModal.value = true
 }
 
-function closeForm() {
-  showForm.value = false
+const closeModal = () => {
+  showModal.value = false
+  editingBook.value = null
 }
 
-async function saveBook() {
+const saveBook = async (bookData) => {
   try {
-    if (isEditMode.value) {
-      
-      await axios.put(`http://localhost:3001/api/books/${form.value.book_id}`, form.value)
+    if (bookData.book_id) {
+      await axios.put(`http://localhost:3001/api/books/${bookData.book_id}`, bookData)
     } else {
-  
-      await axios.post('http://localhost:3001/api/books', form.value)
+      await axios.post('http://localhost:3001/api/books', bookData)
     }
-    closeForm()
-    fetchBooks() 
+    closeModal()
+    fetchBooks()                    
   } catch (err) {
     alert('Ошибка сохранения: ' + (err.response?.data?.message || err.message))
   }
 }
 
-async function deleteBook(bookId) {
-  if (!confirm('Удалить книгу?')) return
+const deleteBook = async (bookId) => {
+  if (!confirm('Вы уверены, что хотите удалить эту книгу?')) return
   try {
     await axios.delete(`http://localhost:3001/api/books/${bookId}`)
-    fetchBooks()
+    fetchBooks()                    
   } catch (err) {
     alert('Ошибка удаления: ' + (err.response?.data?.message || err.message))
   }
 }
 
+watch([searchQuery, selectedGenreId], () => {
+  fetchBooks() 
+})
+
+// ==================== Инициализация ====================
 onMounted(() => {
   fetchBooks()
   fetchGenres()
 })
 </script>
-
-<style scoped>
-/* ────────────────────────────────────── */
-.library-app {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.title {
-  margin: 0;
-  color: #2d3748;
-}
-
-.btn {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.btn-add {
-  background: #3182ce;
-  color: white;
-}
-
-.btn-add:hover {
-  background: #2b6cb0;
-}
-
-.filters {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-}
-
-.genre-select,
-.search-input {
-  padding: 8px 12px;
-  border: 1px solid #cbd5e0;
-  border-radius: 6px;
-  font-size: 1rem;
-}
-
-.search-input {
-  flex: 1;
-  min-width: 220px;
-}
-
-.books-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  text-align: center;
-}
-
-.books-table th {
-  background: #2d3748;
-  color: white;
-  padding: 12px;
-  text-align: center;
-}
-
-.books-table td {
-  padding: 12px;
-  border-bottom: 1px solid #e2e8f0;
-  overflow: hidden;
-}
-
-.books-table tr {
-  min-height: 48px;     
-  height: 48px;
-}
-
-tr:hover {
-  background: #f7fafc;
-}
-
-.book-form {
-  margin-top: 32px;
-  padding: 24px;
-  background: #f9fafb;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-}
-
-.form-group {
-  margin-bottom: 16px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 6px;
-  font-weight: 500;
-}
-
-.form-group input,
-.form-group textarea,
-.form-group select {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #cbd5e0;
-  border-radius: 6px;
-}
-
-.form-actions {
-  margin-top: 24px;
-  display: flex;
-  gap: 12px;
-}
-
-.btn-save {
-  background: #38a169;
-  color: white;
-}
-
-.btn-save:hover {
-  background: #2f855a;
-}
-
-.btn-cancel {
-  background: #e2e8f0;
-  color: #2d3748;
-}
-
-.btn-cancel:hover {
-  background: #cbd5e0;
-}
-
-.empty, .loading, .error {
-  text-align: center;
-  padding: 40px;
-  color: #718096;
-}
-</style>
